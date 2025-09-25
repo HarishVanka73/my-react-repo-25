@@ -3,13 +3,13 @@ pipeline {
 
     environment {
         IMAGE_NAME = 'my-react-app'
-        TAG = 'latest'
+        TAG = '${BUILD_NUMBER}'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                 git branch: 'main', url:''
+                 git branch: 'main', url:'https://github.com/HarishVanka73/my-react-repo-25.git'
             }
         }
 
@@ -37,18 +37,7 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
-            when {
-                expression { return env.DOCKER_HUB_USERNAME != null }
-            }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
-                    sh "docker tag ${IMAGE_NAME}:${TAG} $USERNAME/${IMAGE_NAME}:${TAG}"
-                    sh "docker push $USERNAME/${IMAGE_NAME}:${TAG}"
-                }
-            }
-        }
+        
 
         stage('Deploy') {
             steps {
