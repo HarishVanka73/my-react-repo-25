@@ -56,10 +56,27 @@ pipeline {
             }
         }
 		
-        stage('Deploy') {
+        stage('Deploy Container on Server') {
             steps {
-                echo "Deploy stage - Define your deployment here (e.g., Kubernetes, SSH, etc.)"
+                script {
+                    // SSH into target server and run container
+                    sshagent(['deploy-ssh-key']) {
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ubuntu@YOUR_SERVER '
+                                # Stop & remove old container if exists
+                                docker rm -f react-frontend || true
+
+                                # Pull the latest image from ECR
+                                aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                                docker pull ${ECR_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${imageTag}
+
+                                # Run the container
+                                docker run -d --name react-frontend -p 80:80 ${ECR_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${imageTag}
+                        """
+                    }
+                }
             }
         }
     }
 }
+
